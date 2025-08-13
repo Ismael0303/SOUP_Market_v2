@@ -1,13 +1,13 @@
 // TODO: Integrar <Breadcrumbs /> y usar notificaciones globales en acciones clave.
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, getAppId } from '../firebaseConfig';
 import { getProductsWithStock, updateProductStock } from '../api/productApi';
 import { getMyBusinesses } from '../api/businessApi';
+import { createVenta } from '../api/ventaApi';
 import Layout from '../components/Layout';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 
 const POSScreen = () => {
   const [search, setSearch] = useState('');
@@ -22,6 +22,7 @@ const POSScreen = () => {
   const [businesses, setBusinesses] = useState([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Efectivo');
   const { showNotification } = useNotification();
+  const { user: authUser } = useAuth();
 
   useEffect(() => {
     // Reloj en tiempo real
@@ -108,7 +109,7 @@ const POSScreen = () => {
   };
 
   const finalizarVenta = async () => {
-    if (!auth.currentUser) {
+    if (!authUser) {
       showNotification('Debes estar autenticado para realizar ventas.', 'error');
       return;
     }
@@ -124,44 +125,29 @@ const POSScreen = () => {
     }
 
     try {
-      const userId = auth.currentUser.uid;
-      const appId = getAppId();
-
       // Calcular totales
       const subtotal = cart.reduce((sum, item) => sum + (item.precio || 0) * item.qty, 0);
       const taxAmount = subtotal * 0.21; // 21% IVA
       const totalAmount = subtotal + taxAmount;
 
-      // Crear objeto de venta para Firestore
+      // Crear objeto de venta para el backend
       const saleData = {
-        userId: userId,
-        businessId: selectedBusiness.id,
-        receiptNumber: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        saleDate: serverTimestamp(),
-        paymentMethod: selectedPaymentMethod,
-        totalAmount: totalAmount,
-        subtotalAmount: subtotal,
-        taxAmount: taxAmount,
+        business_id: selectedBusiness.id,
+        payment_method: selectedPaymentMethod,
+        total_amount: totalAmount,
+        subtotal_amount: subtotal,
+        tax_amount: taxAmount,
         currency: "ARS",
         status: "Completada",
-        customerInfo: {}, // Se podría añadir un modal para capturar esto
         items: cart.map(item => ({
-          productId: item.id,
-          productName: item.nombre,
+          product_id: item.id,
           quantity: item.qty,
-          unitPrice: item.precio,
-          itemTotal: item.precio * item.qty,
-          sku: item.sku || '',
-          categoria: item.categoria || ''
+          unit_price: item.precio,
         })),
-        notes: "",
-        discountAmount: 0,
-        discountReason: ""
       };
 
-      // Guardar venta en Firestore
-      const salesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/sales`);
-      await addDoc(salesCollectionRef, saleData);
+      // Guardar venta en el backend
+      await createVenta(saleData);
 
       // Actualizar stock de productos vendidos
       for (const item of cart) {

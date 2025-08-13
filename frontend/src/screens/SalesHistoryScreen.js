@@ -1,6 +1,7 @@
 // frontend/src/screens/SalesHistoryScreen.js
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import ventaApi from '../api/ventaApi';
 
 const SalesHistoryScreen = () => {
     const [sales, setSales] = useState([]);
@@ -32,33 +33,16 @@ const SalesHistoryScreen = () => {
         const loadSales = async () => {
             try {
                 setLoading(true);
-                // Por ahora usamos datos simulados, pero aquí iría la llamada real a la API
-                const mockSales = [
-                    {
-                        id: 1,
-                        fecha: '2025-07-10',
-                        total: 150.00,
-                        productos: [
-                            { nombre: 'Pan Francés', cantidad: 2, precio: 25.00 },
-                            { nombre: 'Croissant', cantidad: 1, precio: 100.00 }
-                        ],
-                        metodo_pago: 'Efectivo',
-                        estado: 'Completada'
-                    },
-                    {
-                        id: 2,
-                        fecha: '2025-07-09',
-                        total: 75.50,
-                        productos: [
-                            { nombre: 'Pan Integral', cantidad: 1, precio: 30.00 },
-                            { nombre: 'Galletas', cantidad: 1, precio: 45.50 }
-                        ],
-                        metodo_pago: 'Tarjeta',
-                        estado: 'Completada'
-                    }
-                ];
-                
-                setSales(mockSales);
+                const today = new Date();
+                const defaultEndDate = today.toISOString().split('T')[0];
+                const defaultStartDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+
+                setStartDate(defaultStartDate);
+                setEndDate(defaultEndDate);
+
+                const data = await ventaApi.getAnalisisVentas(defaultStartDate, defaultEndDate);
+                setSales(data.ventas);
+                setReportData(data);
                 setError(null);
             } catch (err) {
                 setError('Error al cargar las ventas');
@@ -79,24 +63,9 @@ const SalesHistoryScreen = () => {
 
         try {
             setLoadingReport(true);
-            
-            // Aquí iría la llamada real a la API
-            const mockReport = {
-                ventas: sales.filter(sale => 
-                    sale.fecha >= startDate && sale.fecha <= endDate
-                ),
-                totalVentas: sales.filter(sale => 
-                    sale.fecha >= startDate && sale.fecha <= endDate
-                ).length,
-                promedioVenta: 112.75,
-                productosMasVendidos: [
-                    { nombre: 'Pan Francés', cantidad: 5 },
-                    { nombre: 'Croissant', cantidad: 3 },
-                    { nombre: 'Pan Integral', cantidad: 2 }
-                ]
-            };
-            
-            setReportData(mockReport);
+            const data = await ventaApi.getAnalisisVentas(startDate, endDate);
+            setSales(data.ventas); // Update sales list based on report dates
+            setReportData(data);
             showNotification('Reporte generado exitosamente', 'success');
         } catch (err) {
             showNotification('Error al generar el reporte', 'error');

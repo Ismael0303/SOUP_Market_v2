@@ -3,9 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import Breadcrumbs from '../components/Breadcrumbs';
-import businessApi from '../api/businessApi';
-import productApi from '../api/productApi';
-import { getVentasByNegocio } from '../api/ventaApi';
+import { getDashboardStats } from '../api/dashboardApi';
 
 const DashboardScreen = () => {
   const [stats, setStats] = useState({
@@ -23,43 +21,13 @@ const DashboardScreen = () => {
         setLoading(true);
         setError(null);
         
-        const [businesses, products] = await Promise.all([
-          businessApi.getMyBusinesses(),
-          productApi.getMyProducts(),
-        ]);
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        let ventasHoy = 0;
-        let ingresosHoy = 0;
-
-        for (const business of businesses) {
-          const ventas = await getVentasByNegocio(business.id);
-          ventas.forEach(venta => {
-            const ventaDate = new Date(venta.fecha_venta);
-            ventaDate.setHours(0, 0, 0, 0);
-            if (ventaDate.getTime() === today.getTime()) {
-              ventasHoy += 1;
-              ingresosHoy += venta.total_amount;
-            }
-          });
-        }
-
-        const productosEnStock = products.reduce((sum, product) => sum + (product.stock_terminado || 0), 0);
-        const totalNegocios = businesses.length;
-
-        setStats({
-          ventasHoy,
-          ingresosHoy: `${ingresosHoy.toFixed(2)}`,
-          productosEnStock,
-          totalNegocios
-        });
+        const data = await getDashboardStats();
+        setStats(data);
+        setLoading(false);
         
       } catch (err) {
         console.error('Error cargando datos del dashboard:', err);
         setError('Error al cargar los datos del dashboard');
-      } finally {
         setLoading(false);
       }
     };

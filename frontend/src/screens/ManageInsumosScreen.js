@@ -121,7 +121,7 @@ const ManageInsumosScreen = () => {
                     Costo Unitario: <span className="font-semibold">${insumo.costo_unitario_compra.toFixed(2)} / {insumo.unidad_medida_compra}</span>
                   </p>
                   <div className="flex space-x-2">
-                    <Link to={`/dashboard/insumos/edit/${insumo.id}`}>
+                    <Link to={`/dashboard/insumos/${insumo.id}/edit`}>
                       <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700">
                         Editar
                       </Button>

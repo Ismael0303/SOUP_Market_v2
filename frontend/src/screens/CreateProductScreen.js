@@ -1,8 +1,10 @@
 // frontend/src/screens/CreateProductScreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { useNotification } from '../context/NotificationContext';
+import productApi from '../api/productApi';
+import businessApi from '../api/businessApi';
 
 const CreateProductScreen = () => {
   const [form, setForm] = useState({
@@ -20,6 +22,24 @@ const CreateProductScreen = () => {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const { showNotification } = useNotification();
+  const [selectedBusinessId, setSelectedBusinessId] = useState(null);
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        const businesses = await businessApi.getMyBusinesses();
+        if (businesses && businesses.length > 0) {
+          setSelectedBusinessId(businesses[0].id);
+        } else {
+          showNotification('No se encontraron negocios para el usuario. Por favor, crea uno primero.', 'error');
+        }
+      } catch (error) {
+        console.error('Error al cargar negocios:', error);
+        showNotification('Error al cargar negocios.', 'error');
+      }
+    };
+    fetchBusinesses();
+  }, [showNotification]);
 
   // Validación simple
   const validate = () => {
@@ -52,14 +72,58 @@ const CreateProductScreen = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) {
       showNotification('Por favor corrige los errores del formulario.', 'error');
       return;
     }
-    // Aquí iría la lógica de envío al backend
-    showNotification('Producto creado correctamente', 'success');
+
+    if (!selectedBusinessId) {
+      showNotification('No se ha seleccionado un negocio. Por favor, asegúrate de tener al menos un negocio.', 'error');
+      return;
+    }
+
+    const productTypeMap = {
+      'physical_good': 'PHYSICAL_GOOD',
+      'service_by_hour': 'SERVICE_BY_HOUR',
+      'service_by_project': 'SERVICE_BY_PROJECT',
+      'digital_good': 'DIGITAL_GOOD',
+    };
+
+    const productData = {
+      nombre: form.nombre,
+      descripcion: form.notas || null,
+      precio: parseFloat(form.costo),
+      tipo_producto: productTypeMap[form.categoria.toLowerCase()] || 'PHYSICAL_GOOD',
+      negocio_id: selectedBusinessId,
+      precio_venta: parseFloat(form.precio_venta),
+      stock_terminado: parseFloat(form.stock),
+      // margen_ganancia_sugerido, insumos, etc. se pueden añadir si el formulario los soporta
+    };
+
+    try {
+      await productApi.createProduct(productData);
+      showNotification('Producto creado correctamente', 'success');
+      // Redirigir o limpiar formulario
+      setForm({
+        nombre: '',
+        sku: '',
+        precio_venta: '',
+        costo: '',
+        stock: '',
+        categoria: '',
+        proveedor: '',
+        notas: '',
+        activo: true,
+      });
+      setImage(null);
+      setImagePreview(null);
+      setErrors({});
+    } catch (error) {
+      console.error('Error al crear producto:', error);
+      showNotification('Error al crear producto.', 'error');
+    }
   };
 
   return (

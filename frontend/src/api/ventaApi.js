@@ -195,11 +195,39 @@ export const getProductosPorVencer = async () => {
   }
 };
 
+/**
+ * Obtiene todas las ventas del usuario autenticado.
+ * @returns {Promise<Array>} Lista de ventas.
+ */
+export const getMyVentas = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/ventas/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener todas las ventas');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification('Error al obtener todas las ventas', 'error');
+    return [];
+  }
+};
+
 export default {
   getVentasByNegocio,
   createVenta,
   getDashboardStats,
   getAnalisisVentas,
   getAlertasStock,
-  getProductosPorVencer
+  getProductosPorVencer,
+  getMyVentas
 }; 

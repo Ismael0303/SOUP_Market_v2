@@ -1,12 +1,11 @@
 // frontend/src/components/Layout.js
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { logout } = useAuth();
-  const location = useLocation();
 
   const handleLogout = () => {
     logout();

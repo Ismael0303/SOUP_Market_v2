@@ -30,55 +30,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Función para registrar un usuario
-  const register = async (userData) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const newUser = await registerUser(userData);
-      // Tras el registro, intentamos iniciar sesión automáticamente para obtener un token
-      const loginResponse = await loginUser(userData.email, userData.password);
-      setAuthData(loginResponse.access_token, newUser);
-      navigate('/dashboard'); // Redirigir al dashboard tras el registro y login
-      return newUser;
-    } catch (err) {
-      setError(err.message || 'Error en el registro.');
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem('token');
-      throw err; // Re-lanza el error para que el componente pueda manejarlo
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para iniciar sesión
-  const login = async (email, password) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await loginUser(email, password);
-      setAuthData(data.access_token, null); // Establece el token, el usuario se cargará con loadUser
-      await loadUser(data.access_token); // Carga los datos completos del usuario
-      navigate('/dashboard'); // Redirigir al dashboard tras el login
-      return data;
-    } catch (err) {
-      setError(err.message || 'Error al iniciar sesión.');
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem('token');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para cerrar sesión
-  const logout = () => {
-    setAuthData(null, null);
-    navigate('/login'); // Redirigir a la pantalla de login tras cerrar sesión
-  };
-
   // Función para cargar los datos del usuario a partir del token
   const loadUser = useCallback(async (authToken) => {
     if (!authToken) {
@@ -98,6 +49,55 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+  }, [setAuthData, navigate]);
+
+  // Función para registrar un usuario
+  const register = useCallback(async (userData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const newUser = await registerUser(userData);
+      // Tras el registro, intentamos iniciar sesión automáticamente para obtener un token
+      const loginResponse = await loginUser(userData.email, userData.password);
+      setAuthData(loginResponse.access_token, newUser);
+      navigate('/dashboard'); // Redirigir al dashboard tras el registro y login
+      return newUser;
+    } catch (err) {
+      setError(err.message || 'Error en el registro.');
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('token');
+      throw err; // Re-lanza el error para que el componente pueda manejarlo
+    } finally {
+      setLoading(false);
+    }
+  }, [setAuthData, navigate]);
+
+  // Función para iniciar sesión
+  const login = useCallback(async (email, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await loginUser(email, password);
+      setAuthData(data.access_token, null); // Establece el token, el usuario se cargará con loadUser
+      await loadUser(data.access_token); // Carga los datos completos del usuario
+      navigate('/dashboard'); // Redirigir al dashboard tras el login
+      return data;
+    } catch (err) {
+      setError(err.message || 'Error al iniciar sesión.');
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('token');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [setAuthData, loadUser, navigate]);
+
+  // Función para cerrar sesión
+  const logout = useCallback(() => {
+    setAuthData(null, null);
+    navigate('/login'); // Redirigir a la pantalla de login tras cerrar sesión
   }, [setAuthData, navigate]);
 
   // Efecto para cargar el usuario al inicio de la aplicación (si ya hay un token)

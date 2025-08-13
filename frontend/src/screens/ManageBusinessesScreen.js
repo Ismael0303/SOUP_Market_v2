@@ -143,7 +143,7 @@ const ManageBusinessesScreen = () => {
                   </div>
                   
                   <div className="flex justify-between items-center mt-3">
-                    <Link to={`/dashboard/businesses/edit/${business.id}`}>
+                    <Link to={`/dashboard/businesses/${business.id}/edit`}>
                       <Button variant="outline" size="sm">Editar</Button>
                     </Link>
                     <Button
