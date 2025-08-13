@@ -9,7 +9,7 @@ from app.routers import insumo_router # Import the new insumo router
 from app.routers import public_ai_router
 from app.routers import plugin_router # Import the new plugin router
 from app.routers import venta_router # Import the new venta router
-from app.routers import niam_router # Import the new niam router
+from app.plugins.bakery import router as bakery_router
 
 # Create the FastAPI application instance
 app = FastAPI(
@@ -25,6 +25,7 @@ def create_db_tables():
     # Importing models here ensures that all model classes (like Usuario) are
     # defined and registered with Base.metadata before create_all is called.
     import app.models
+    import app.plugins.bakery.models
     Base.metadata.create_all(bind=engine)
 
 # Startup event handler for FastAPI application
@@ -98,4 +99,4 @@ app.include_router(insumo_router.router, tags=["Insumos"])
 app.include_router(public_ai_router.router, tags=["AI Recomendaciones"])
 app.include_router(plugin_router.router, tags=["Plugins"])
 app.include_router(venta_router.router, tags=["Ventas & POS"])
-app.include_router(niam_router.router, tags=["Panadería Ñiam"])
+app.include_router(bakery_router.router)

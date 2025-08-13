@@ -21,8 +21,8 @@ const PublicListingScreen = () => {
       try {
         setIsLoading(true);
         
-        const fetchedBusinesses = await businessApi.getMyBusinesses();
-        const fetchedProducts = await productApi.getMyProducts();
+        const fetchedBusinesses = await businessApi.getPublicBusinesses();
+        const fetchedProducts = await productApi.getPublicProducts();
 
         setBusinesses(fetchedBusinesses);
         setProducts(fetchedProducts);

@@ -21,6 +21,9 @@ import SalesHistoryScreen from './screens/SalesHistoryScreen';
 import PublicListingScreen from './screens/PublicListingScreen';
 import BusinessLandingScreen from './screens/BusinessLandingScreen';
 import PricingPlansScreen from './screens/PricingPlansScreen';
+import PluginsScreen from './screens/PluginsScreen';
+import RecipeScreen from './screens/RecipeScreen';
+import ProductionScreen from './screens/ProductionScreen';
 
 function App() {
   const { isAuthenticated, loading } = useAuth();
@@ -61,6 +64,9 @@ function App() {
         <Route path="/dashboard/businesses/:id/edit" element={isAuthenticated ? <EditBusinessScreen /> : <Navigate to="/login" />} />
         <Route path="/dashboard/pos" element={isAuthenticated ? <POSScreen /> : <Navigate to="/login" />} />
         <Route path="/dashboard/sales" element={isAuthenticated ? <SalesHistoryScreen /> : <Navigate to="/login" />} />
+        <Route path="/dashboard/plugins" element={isAuthenticated ? <PluginsScreen /> : <Navigate to="/login" />} />
+        <Route path="/dashboard/recetas" element={isAuthenticated ? <RecipeScreen /> : <Navigate to="/login" />} />
+        <Route path="/dashboard/produccion" element={isAuthenticated ? <ProductionScreen /> : <Navigate to="/login" />} />
         
         {/* Ruta de fallback */}
         <Route path="*" element={<Navigate to="/" />} />

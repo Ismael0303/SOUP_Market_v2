@@ -98,6 +98,29 @@ def get_product_endpoint(
     response_data.margen_ganancia_real = _calculate_margen_ganancia_real(db_product)
     return response_data
 
+@router.get(
+    "/public/business/{business_id}",
+    response_model=List[ProductoResponse],
+    summary="Get all public products/services for a specific business",
+    description="Retrieves a list of all products or services associated with a given business ID, accessible publicly."
+)
+def get_public_products_by_business_id_endpoint(
+    business_id: UUID,
+    db: Session = Depends(get_db)
+):
+    products = crud_product.get_products_by_business_id(db, business_id=business_id)
+    if not products:
+        # Return empty list if no products found, or 404 if business itself not found/public
+        # For now, returning empty list is safer if business might exist but have no products
+        return []
+    
+    response_products = []
+    for p in products:
+        response_data = ProductoResponse.model_validate(p)
+        response_data.margen_ganancia_real = _calculate_margen_ganancia_real(p)
+        response_products.append(response_data)
+    return response_products
+
 @router.put(
     "/{product_id}",
     response_model=ProductoResponse,

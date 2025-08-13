@@ -14,7 +14,7 @@ const BusinessLandingScreen = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const fetchedBusiness = await businessApi.getBusinessById(businessId);
+        const fetchedBusiness = await businessApi.getPublicBusinessById(businessId);
         if (fetchedBusiness) {
           setBusiness(fetchedBusiness);
           const fetchedProducts = await productApi.getProductsByBusinessId(businessId);

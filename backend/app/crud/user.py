@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_
 from typing import List, Optional
 from uuid import UUID
@@ -8,7 +8,7 @@ from app.schemas import UsuarioCreate, UsuarioUpdate
 from app.core.security import get_password_hash, verify_password
 
 def get_user(db: Session, user_id: UUID) -> Optional[Usuario]:
-    return db.query(Usuario).filter(Usuario.id == user_id).first()
+    return db.query(Usuario).options(joinedload(Usuario.negocios)).filter(Usuario.id == user_id).first()
 
 def get_user_by_email(db: Session, email: str) -> Optional[Usuario]:
     return db.query(Usuario).filter(Usuario.email == email).first()

@@ -117,6 +117,35 @@ export const deleteBusiness = async (businessId) => {
   return handleResponse(response);
 };
 
+/**
+ * Obtiene todos los negocios públicos (sin autenticación).
+ * @returns {Promise<Array<Object>>} Una lista de todos los negocios públicos.
+ */
+export const getPublicBusinesses = async () => {
+  const response = await fetch(`${API_BASE_URL}/public/businesses`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+  return handleResponse(response);
+};
+
+/**
+ * Obtiene los detalles de un negocio específico de forma pública (sin autenticación).
+ * @param {string} businessId - El UUID del negocio.
+ * @returns {Promise<Object>} Los detalles del negocio.
+ */
+export const getPublicBusinessById = async (businessId) => {
+  const response = await fetch(`${API_BASE_URL}/public/businesses/${businessId}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+  return handleResponse(response);
+};
+
 // Exportar todas las funciones como un objeto por defecto para compatibilidad
 const businessApi = {
   createBusiness,
@@ -125,6 +154,8 @@ const businessApi = {
   getBusinessById,
   updateBusiness,
   deleteBusiness,
+  getPublicBusinesses, // Add the new public function
+  getPublicBusinessById, // Add the new public function
 };
 
 export default businessApi;

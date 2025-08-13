@@ -132,17 +132,17 @@ const POSScreen = () => {
 
       // Crear objeto de venta para el backend
       const saleData = {
-        business_id: selectedBusiness.id,
-        payment_method: selectedPaymentMethod,
-        total_amount: totalAmount,
-        subtotal_amount: subtotal,
-        tax_amount: taxAmount,
-        currency: "ARS",
-        status: "Completada",
-        items: cart.map(item => ({
-          product_id: item.id,
-          quantity: item.qty,
-          unit_price: item.precio,
+        negocio_id: selectedBusiness.id,
+        metodo_pago: selectedPaymentMethod,
+        total: totalAmount,
+        subtotal: subtotal,
+        impuestos: taxAmount,
+        estado: "Completada",
+        detalles: cart.map(item => ({
+          producto_id: item.id,
+          cantidad: item.qty,
+          precio_unitario: item.precio,
+          descuento_unitario: 0.0, // Add this as per DetalleVentaCreate schema
         })),
       };
 

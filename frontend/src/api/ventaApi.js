@@ -115,10 +115,10 @@ export const getDashboardStats = async () => {
  * @param {string} endDate - Fecha de fin (YYYY-MM-DD)
  * @returns {Promise<Object>} Análisis de ventas
  */
-export const getAnalisisVentas = async (startDate, endDate) => {
+export const getAnalisisVentas = async (negocioId, startDate, endDate) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/ventas/analisis?start_date=${startDate}&end_date=${endDate}`, {
+    const response = await fetch(`${API_BASE_URL}/ventas/analisis/${negocioId}?fecha_inicio=${startDate}&fecha_fin=${endDate}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

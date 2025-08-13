@@ -23,19 +23,22 @@ const CreateProductScreen = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const { showNotification } = useNotification();
   const [selectedBusinessId, setSelectedBusinessId] = useState(null);
+  const [businesses, setBusinesses] = useState([]); // New state for all businesses
 
   useEffect(() => {
     const fetchBusinesses = async () => {
       try {
-        const businesses = await businessApi.getMyBusinesses();
-        if (businesses && businesses.length > 0) {
-          setSelectedBusinessId(businesses[0].id);
+        const fetchedBusinesses = await businessApi.getMyBusinesses(); // Renamed to avoid conflict
+        setBusinesses(fetchedBusinesses); // Store all businesses
+        if (fetchedBusinesses && fetchedBusinesses.length > 0) {
+          setSelectedBusinessId(fetchedBusinesses[0].id);
         } else {
           showNotification('No se encontraron negocios para el usuario. Por favor, crea uno primero.', 'error');
         }
       } catch (error) {
         console.error('Error al cargar negocios:', error);
         showNotification('Error al cargar negocios.', 'error');
+        setBusinesses([]); // Ensure businesses is empty on error
       }
     };
     fetchBusinesses();
@@ -138,6 +141,9 @@ const CreateProductScreen = () => {
             <li><Link to="/dashboard/insumos" className="text-gray-700 hover:text-blue-600">Insumos</Link></li>
             <li><Link to="/dashboard/businesses" className="text-gray-700 hover:text-blue-600">Negocios</Link></li>
             <li><Link to="/dashboard/ventas" className="text-gray-700 hover:text-blue-600">Ventas</Link></li>
+            {/* <li><Link to="/dashboard/recetas" className="text-gray-700 hover:text-blue-600">Recetas</Link></li> */}
+            {/* <li><Link to="/dashboard/produccion" className="text-gray-700 hover:text-blue-600">Producción</Link></li> */}
+            <li><Link to="/dashboard/plugins" className="text-gray-700 hover:text-blue-600">Plugins</Link></li>
           </ul>
         </nav>
       </aside>
@@ -180,6 +186,27 @@ const CreateProductScreen = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                 <input type="text" name="categoria" value={form.categoria} onChange={handleChange} className="input-field" placeholder="Ej: Panadería, Bebidas" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Negocio Asociado <span className="text-red-500">*</span></label>
+                <select
+                  name="negocio_id"
+                  value={selectedBusinessId || ''}
+                  onChange={(e) => setSelectedBusinessId(e.target.value)}
+                  required
+                  className="input-field"
+                  disabled={businesses.length === 0}
+                >
+                  <option value="">Selecciona un negocio</option>
+                  {businesses.map(business => (
+                    <option key={business.id} value={business.id}>
+                      {business.nombre}
+                    </option>
+                  ))}
+                </select>
+                {businesses.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">No tienes negocios. Crea uno primero para asociar productos.</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Proveedor</label>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import ventaApi from '../api/ventaApi';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 const SalesHistoryScreen = () => {
     const [sales, setSales] = useState([]);
@@ -11,6 +12,7 @@ const SalesHistoryScreen = () => {
     const [endDate, setEndDate] = useState(''); // Formato 'YYYY-MM-DD'
     const [reportData, setReportData] = useState([]);
     const [loadingReport, setLoadingReport] = useState(false);
+    const { user, loading: authLoading } = useAuth(); // Get user and auth loading state from useAuth
 
     // Función para mostrar notificaciones
     const showNotification = (message, type) => {
@@ -31,6 +33,9 @@ const SalesHistoryScreen = () => {
     // Cargar ventas al montar el componente
     useEffect(() => {
         const loadSales = async () => {
+            if (authLoading) { // Wait for auth context to load
+                return;
+            }
             try {
                 setLoading(true);
                 const today = new Date();
@@ -40,7 +45,13 @@ const SalesHistoryScreen = () => {
                 setStartDate(defaultStartDate);
                 setEndDate(defaultEndDate);
 
-                const data = await ventaApi.getAnalisisVentas(defaultStartDate, defaultEndDate);
+                if (!user || !user.negocio_principal_id) {
+                    setError('No se pudo cargar el análisis de ventas: Usuario o negocio no disponible.');
+                    setLoading(false);
+                    return;
+                }
+
+                const data = await ventaApi.getAnalisisVentas(user.negocio_principal_id, defaultStartDate, defaultEndDate);
                 setSales(data.ventas);
                 setReportData(data);
                 setError(null);
@@ -53,17 +64,26 @@ const SalesHistoryScreen = () => {
         };
 
         loadSales();
-    }, []);
+    }, [user, authLoading]); // Add user and authLoading to dependency array
 
     const generateReport = async () => {
+        if (authLoading) { // Wait for auth context to load
+            showNotification('Cargando datos de usuario, por favor espera.', 'info');
+            return;
+        }
         if (!startDate || !endDate) {
             showNotification('Por favor selecciona fechas de inicio y fin', 'error');
             return;
         }
 
+        if (!user || !user.negocio_principal_id) {
+            showNotification('Usuario o negocio no disponible para generar el reporte.', 'error');
+            return;
+        }
+
         try {
             setLoadingReport(true);
-            const data = await ventaApi.getAnalisisVentas(startDate, endDate);
+            const data = await ventaApi.getAnalisisVentas(user.negocio_principal_id, startDate, endDate);
             setSales(data.ventas); // Update sales list based on report dates
             setReportData(data);
             showNotification('Reporte generado exitosamente', 'success');
