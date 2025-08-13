@@ -1,6 +1,8 @@
 // frontend/src/screens/SalesHistoryScreen.js
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import ventaApi from '../api/ventaApi';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 const SalesHistoryScreen = () => {
     const [sales, setSales] = useState([]);
@@ -10,6 +12,7 @@ const SalesHistoryScreen = () => {
     const [endDate, setEndDate] = useState(''); // Formato 'YYYY-MM-DD'
     const [reportData, setReportData] = useState([]);
     const [loadingReport, setLoadingReport] = useState(false);
+    const { user, loading: authLoading } = useAuth(); // Get user and auth loading state from useAuth
 
     // Función para mostrar notificaciones
     const showNotification = (message, type) => {
@@ -30,35 +33,27 @@ const SalesHistoryScreen = () => {
     // Cargar ventas al montar el componente
     useEffect(() => {
         const loadSales = async () => {
+            if (authLoading) { // Wait for auth context to load
+                return;
+            }
             try {
                 setLoading(true);
-                // Por ahora usamos datos simulados, pero aquí iría la llamada real a la API
-                const mockSales = [
-                    {
-                        id: 1,
-                        fecha: '2025-07-10',
-                        total: 150.00,
-                        productos: [
-                            { nombre: 'Pan Francés', cantidad: 2, precio: 25.00 },
-                            { nombre: 'Croissant', cantidad: 1, precio: 100.00 }
-                        ],
-                        metodo_pago: 'Efectivo',
-                        estado: 'Completada'
-                    },
-                    {
-                        id: 2,
-                        fecha: '2025-07-09',
-                        total: 75.50,
-                        productos: [
-                            { nombre: 'Pan Integral', cantidad: 1, precio: 30.00 },
-                            { nombre: 'Galletas', cantidad: 1, precio: 45.50 }
-                        ],
-                        metodo_pago: 'Tarjeta',
-                        estado: 'Completada'
-                    }
-                ];
-                
-                setSales(mockSales);
+                const today = new Date();
+                const defaultEndDate = today.toISOString().split('T')[0];
+                const defaultStartDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+
+                setStartDate(defaultStartDate);
+                setEndDate(defaultEndDate);
+
+                if (!user || !user.negocio_principal_id) {
+                    setError('No se pudo cargar el análisis de ventas: Usuario o negocio no disponible.');
+                    setLoading(false);
+                    return;
+                }
+
+                const data = await ventaApi.getAnalisisVentas(user.negocio_principal_id, defaultStartDate, defaultEndDate);
+                setSales(data.ventas);
+                setReportData(data);
                 setError(null);
             } catch (err) {
                 setError('Error al cargar las ventas');
@@ -69,34 +64,28 @@ const SalesHistoryScreen = () => {
         };
 
         loadSales();
-    }, []);
+    }, [user, authLoading]); // Add user and authLoading to dependency array
 
     const generateReport = async () => {
+        if (authLoading) { // Wait for auth context to load
+            showNotification('Cargando datos de usuario, por favor espera.', 'info');
+            return;
+        }
         if (!startDate || !endDate) {
             showNotification('Por favor selecciona fechas de inicio y fin', 'error');
             return;
         }
 
+        if (!user || !user.negocio_principal_id) {
+            showNotification('Usuario o negocio no disponible para generar el reporte.', 'error');
+            return;
+        }
+
         try {
             setLoadingReport(true);
-            
-            // Aquí iría la llamada real a la API
-            const mockReport = {
-                ventas: sales.filter(sale => 
-                    sale.fecha >= startDate && sale.fecha <= endDate
-                ),
-                totalVentas: sales.filter(sale => 
-                    sale.fecha >= startDate && sale.fecha <= endDate
-                ).length,
-                promedioVenta: 112.75,
-                productosMasVendidos: [
-                    { nombre: 'Pan Francés', cantidad: 5 },
-                    { nombre: 'Croissant', cantidad: 3 },
-                    { nombre: 'Pan Integral', cantidad: 2 }
-                ]
-            };
-            
-            setReportData(mockReport);
+            const data = await ventaApi.getAnalisisVentas(user.negocio_principal_id, startDate, endDate);
+            setSales(data.ventas); // Update sales list based on report dates
+            setReportData(data);
             showNotification('Reporte generado exitosamente', 'success');
         } catch (err) {
             showNotification('Error al generar el reporte', 'error');

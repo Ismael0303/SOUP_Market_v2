@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card.jsx';
-import { getMyProducts, deleteProduct, updateProductStock, getStockStatus } from '../api/productApi';
+import { getMyProducts, deleteProduct } from '../api/productApi';
 import Layout from '../components/Layout';
 
 const ManageProductsScreen = () => {
@@ -31,16 +31,6 @@ const ManageProductsScreen = () => {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
-
-  const handleUpdateStock = async (productId, newStock) => {
-    try {
-      await updateProductStock(productId, newStock);
-      fetchProducts();
-    } catch (error) {
-      console.error('Error actualizando stock:', error);
-      alert('Error actualizando stock: ' + error.message);
-    }
-  };
 
   const handleDelete = async (productId) => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este producto/servicio? Esta acción no se puede deshacer.")) {
@@ -161,7 +151,7 @@ const ManageProductsScreen = () => {
                   
                   <div className="flex justify-between items-center mt-3">
                     {product.id ? (
-                      <Link to={`/dashboard/products/edit/${product.id}`}>
+                      <Link to={`/dashboard/products/${product.id}/edit`}>
                         <Button variant="outline" size="sm">Editar</Button>
                       </Link>
                     ) : (

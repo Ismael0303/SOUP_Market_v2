@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }) => {
   const setAuthData = useCallback((newToken, userData) => {
     setToken(newToken);
     setUser(userData);
+    console.log("AuthContext: setAuthData - User:", userData, "Token:", newToken ? "present" : "absent");
     if (newToken) {
       localStorage.setItem('token', newToken); // Guardar el token en localStorage
     } else {
@@ -30,8 +31,34 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Función para cargar los datos del usuario a partir del token
+  const loadUser = useCallback(async (authToken) => {
+    console.log("AuthContext: loadUser called. AuthToken present:", !!authToken);
+    if (!authToken) {
+      setLoading(false);
+      console.log("AuthContext: loadUser - No authToken, setLoading(false)");
+      return;
+    }
+    setLoading(true);
+    console.log("AuthContext: loadUser - AuthToken present, setLoading(true)");
+    setError(null);
+    try {
+      const userData = await getMyProfile(authToken);
+      setUser(userData);
+      console.log("AuthContext: loadUser - getMyProfile success, User data:", userData);
+    } catch (err) {
+      console.error('AuthContext: Error al cargar el perfil del usuario:', err);
+      setError('Sesión expirada o inválida. Por favor, inicia sesión de nuevo.');
+      setAuthData(null, null); // Limpiar el token y el usuario si falla la carga del perfil
+      navigate('/login'); // Redirigir al login si la sesión es inválida
+    } finally {
+      setLoading(false);
+      console.log("AuthContext: loadUser - finally block, setLoading(false)");
+    }
+  }, [setAuthData, navigate]);
+
   // Función para registrar un usuario
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     setLoading(true);
     setError(null);
     try {
@@ -50,10 +77,10 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setAuthData, navigate]);
 
   // Función para iniciar sesión
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     setLoading(true);
     setError(null);
     try {
@@ -71,41 +98,22 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setAuthData, loadUser, navigate]);
 
   // Función para cerrar sesión
-  const logout = () => {
+  const logout = useCallback(() => {
     setAuthData(null, null);
     navigate('/login'); // Redirigir a la pantalla de login tras cerrar sesión
-  };
-
-  // Función para cargar los datos del usuario a partir del token
-  const loadUser = useCallback(async (authToken) => {
-    if (!authToken) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const userData = await getMyProfile(authToken);
-      setUser(userData);
-    } catch (err) {
-      console.error('Error al cargar el perfil del usuario:', err);
-      setError('Sesión expirada o inválida. Por favor, inicia sesión de nuevo.');
-      setAuthData(null, null); // Limpiar el token y el usuario si falla la carga del perfil
-      navigate('/login'); // Redirigir al login si la sesión es inválida
-    } finally {
-      setLoading(false);
-    }
   }, [setAuthData, navigate]);
 
   // Efecto para cargar el usuario al inicio de la aplicación (si ya hay un token)
   useEffect(() => {
+    console.log("AuthContext: useEffect - Token:", token ? "present" : "absent");
     if (token) {
       loadUser(token);
     } else {
-      setLoading(false); // Si no hay token, no hay usuario que cargar, terminar carga
+      setLoading(false); // If no token, no user to load, finish loading
+      console.log("AuthContext: useEffect - No token, setLoading(false)");
     }
   }, [token, loadUser]);
 

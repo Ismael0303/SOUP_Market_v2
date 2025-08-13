@@ -181,6 +181,35 @@ export const getStockStatus = (product) => {
   }
 };
 
+/**
+ * Obtiene todos los productos públicos (sin autenticación).
+ * @returns {Promise<Array<Object>>} Una lista de todos los productos públicos.
+ */
+export const getPublicProducts = async () => {
+  const response = await fetch(`${API_BASE_URL}/public/products`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+  return handleResponse(response);
+};
+
+/**
+ * Obtiene todos los productos de un negocio específico (público, sin autenticación).
+ * @param {string} businessId - El UUID del negocio.
+ * @returns {Promise<Array<Object>>} Una lista de los productos del negocio.
+ */
+export const getProductsByBusinessId = async (businessId) => {
+  const response = await fetch(`${API_BASE_URL}/public/products/business/${businessId}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+  return handleResponse(response);
+};
+
 // Exportar todas las funciones como un objeto por defecto para compatibilidad
 const productApi = {
   updateProductStock,
@@ -192,6 +221,8 @@ const productApi = {
   getProductById,
   updateProduct,
   deleteProduct,
+  getPublicProducts, // Add the new public function
+  getProductsByBusinessId, // Add the new function
 };
 
 export default productApi;

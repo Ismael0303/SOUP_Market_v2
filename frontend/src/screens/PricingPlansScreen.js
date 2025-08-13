@@ -1,3 +1,4 @@
+// TODO: Los planes de precios están hardcodeados. Necesitan ser obtenidos desde una API de backend.
 // PricingPlansScreen.js - Implementación según mockups Gemini
 import React from 'react';
 
@@ -44,4 +45,4 @@ const PricingPlansScreen = () => (
   </div>
 );
 
-export default PricingPlansScreen; 
+export default PricingPlansScreen;  

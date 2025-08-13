@@ -1,6 +1,6 @@
 # backend/app/crud/venta.py
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, or_, desc
 from typing import List, Optional, Dict, Any
 from uuid import UUID
@@ -101,7 +101,9 @@ def get_ventas_by_negocio(db: Session, negocio_id: UUID, skip: int = 0, limit: i
 
 def get_ventas_by_date_range(db: Session, negocio_id: UUID, fecha_inicio: date, fecha_fin: date) -> List[Venta]:
     """Obtiene ventas en un rango de fechas"""
-    return db.query(Venta).filter(
+    return db.query(Venta).options(
+        joinedload(Venta.detalles).joinedload(DetalleVenta.producto)
+    ).filter(
         and_(
             Venta.negocio_id == negocio_id,
             func.date(Venta.fecha_venta) >= fecha_inicio,
@@ -149,16 +151,40 @@ def get_analisis_ventas(db: Session, negocio_id: UUID, fecha_inicio: date, fecha
         reverse=True
     )[:10]
     
+    # Convert sales to serializable format
+    ventas_data = []
+    for venta in ventas:
+        venta_dict = {
+            "id": str(venta.id),
+            "fecha": venta.fecha_venta.isoformat(),
+            "total": float(venta.total),
+            "subtotal": float(venta.subtotal),
+            "metodo_pago": venta.metodo_pago,
+            "estado": venta.estado,
+            "productos": [
+                {
+                    "nombre": detalle.producto.nombre,
+                    "cantidad": detalle.cantidad,
+                    "precio_unitario": float(detalle.precio_unitario),
+                    "subtotal": float(detalle.subtotal)
+                }
+                for detalle in venta.detalles
+            ]
+        }
+        ventas_data.append(venta_dict)
+
     return {
         "fecha_inicio": fecha_inicio,
         "fecha_fin": fecha_fin,
         "total_ventas": total_ventas,
         "total_productos_vendidos": total_productos,
         "margen_ganancia_total": margen_total,
+        "ventas": ventas_data,  # Add the actual sales data
         "ventas_por_dia": [
             {"fecha": str(fecha), **datos}
             for fecha, datos in ventas_por_dia.items()
         ],
+        "categorias_mas_vendidas": [], # Placeholder for now
         "productos_mas_vendidos": productos_mas_vendidos
     }
 
@@ -246,7 +272,6 @@ def add_item_to_carrito(db: Session, carrito_id: UUID, item_data: ItemCarritoCre
     ).first()
     
     if existing_item:
-        # Actualizar cantidad
         existing_item.cantidad += item_data.cantidad
         db.commit()
         db.refresh(existing_item)
@@ -315,4 +340,4 @@ def clear_carrito(db: Session, carrito_id: UUID) -> bool:
         db.delete(item)
     
     db.commit()
-    return True 
+    return True

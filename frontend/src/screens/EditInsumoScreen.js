@@ -12,7 +12,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import { useNotification } from '../context/NotificationContext';
 
 const EditInsumoScreen = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { insumoId } = useParams(); // Obtener el ID del insumo de la URL
   const { showNotification } = useNotification();
@@ -24,21 +24,20 @@ const EditInsumoScreen = () => {
     costo_unitario_compra: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingInsumo, setIsLoadingInsumo] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
     const fetchInsumo = async () => {
       if (isAuthenticated && insumoId) {
         try {
-          setIsLoadingInsumo(true);
           const data = await insumoApi.getInsumoById(insumoId);
           setFormData({
             nombre: data.nombre,
@@ -50,12 +49,14 @@ const EditInsumoScreen = () => {
           console.error(`Error al cargar el insumo ${insumoId}:`, err);
           setError('No se pudo cargar el insumo para editar. Por favor, inténtalo de nuevo.');
         } finally {
-          setIsLoadingInsumo(false);
+          setIsLoading(false);
         }
       }
     };
 
-    fetchInsumo();
+    if (isAuthenticated) {
+        fetchInsumo();
+    }
   }, [isAuthenticated, insumoId]); // Recargar si el ID del insumo o el estado de autenticación cambian
 
   const handleChange = (e) => {
@@ -97,7 +98,7 @@ const EditInsumoScreen = () => {
     }
   };
 
-  if (loading || !isAuthenticated || isLoadingInsumo) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
         <p className="text-gray-800 dark:text-gray-200">Cargando...</p>
@@ -208,4 +209,4 @@ const EditInsumoScreen = () => {
   );
 };
 
-export default EditInsumoScreen; 
+export default EditInsumoScreen;

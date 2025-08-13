@@ -115,10 +115,10 @@ export const getDashboardStats = async () => {
  * @param {string} endDate - Fecha de fin (YYYY-MM-DD)
  * @returns {Promise<Object>} Análisis de ventas
  */
-export const getAnalisisVentas = async (startDate, endDate) => {
+export const getAnalisisVentas = async (negocioId, startDate, endDate) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/ventas/analisis?start_date=${startDate}&end_date=${endDate}`, {
+    const response = await fetch(`${API_BASE_URL}/ventas/analisis/${negocioId}?fecha_inicio=${startDate}&fecha_fin=${endDate}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -195,11 +195,39 @@ export const getProductosPorVencer = async () => {
   }
 };
 
+/**
+ * Obtiene todas las ventas del usuario autenticado.
+ * @returns {Promise<Array>} Lista de ventas.
+ */
+export const getMyVentas = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/ventas/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener todas las ventas');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification('Error al obtener todas las ventas', 'error');
+    return [];
+  }
+};
+
 export default {
   getVentasByNegocio,
   createVenta,
   getDashboardStats,
   getAnalisisVentas,
   getAlertasStock,
-  getProductosPorVencer
+  getProductosPorVencer,
+  getMyVentas
 }; 

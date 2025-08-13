@@ -6,7 +6,8 @@ from datetime import datetime, date
 from uuid import UUID
 from enum import Enum
 
-from app.models import UserTier, BusinessType, ProductType, PublicidadTipo, ProductCategory
+from app.models import UserTier, BusinessType, ProductType, PublicidadTipo
+from app.plugins.bakery.models import ProductCategory
 
 # Enums que coinciden con los modelos
 class UserTier(str, Enum):
@@ -56,6 +57,7 @@ class UsuarioResponse(UsuarioBase):
     fecha_creacion: datetime
     fecha_actualizacion: datetime
     plugins_activos: Optional[List[str]] = None  # NUEVO: Para mostrar plugins activos
+    negocio_principal_id: Optional[UUID] = None # Add this field
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -224,43 +226,7 @@ class TokenData(BaseModel):
     email: Optional[str] = None
     tipo_tier: Optional[str] = None
 
-# Schema para registro de ventas (Capítulo Ñiam)
-class VentaCreate(BaseModel):
-    product_id: UUID
-    quantity_sold: float
-    precio_unitario: float
-    total_venta: float
-    notas: Optional[str] = None
 
-class VentaResponse(BaseModel):
-    id: UUID
-    product_id: UUID
-    quantity_sold: float
-    precio_unitario: float
-    total_venta: float
-    fecha_venta: datetime
-    notas: Optional[str] = None
-    usuario_id: UUID
-    
-    class Config:
-        from_attributes = True
-
-class VentaInDB(BaseModel):
-    id: UUID
-    product_id: UUID
-    quantity_sold: float
-    precio_unitario: float
-    total_venta: float
-    fecha_venta: datetime
-    notas: Optional[str] = None
-    usuario_id: UUID
-    
-    class Config:
-        from_attributes = True
-
-    user_id: Optional[str] = None
-    email: Optional[str] = None
-    tipo_tier: Optional[str] = None
 
 # Forward references para evitar problemas de importación circular
 ProductoCreate.model_rebuild()
@@ -268,63 +234,7 @@ ProductoUpdate.model_rebuild()
 ProductoResponse.model_rebuild()
 ProductoInsumoResponse.model_rebuild()
 
-# NUEVOS SCHEMAS PARA PRODUCTOS MEJORADOS
-class ProductoPanaderiaBase(BaseModel):
-    nombre: str
-    descripcion: Optional[str] = None
-    precio: float
-    categoria: Optional[ProductCategory] = None
-    codigo_lote: Optional[str] = None
-    fecha_vencimiento: Optional[date] = None
-    fecha_produccion: Optional[date] = None
-    stock_minimo: Optional[float] = 0.0
-    stock_maximo: Optional[float] = None
-    unidad_venta: Optional[str] = "unidad"
-    es_perecedero: Optional[bool] = True
-    tiempo_vida_util: Optional[int] = None
-    requiere_refrigeracion: Optional[bool] = False
-    ingredientes: Optional[List[str]] = None
-    alergenos: Optional[List[str]] = None
-    calorias_por_porcion: Optional[float] = None
-    peso_porcion: Optional[float] = None
-    unidad_peso: Optional[str] = "g"
 
-class ProductoPanaderiaCreate(ProductoPanaderiaBase):
-    negocio_id: UUID
-    tipo_producto: ProductType = ProductType.PHYSICAL_GOOD
-
-class ProductoPanaderiaUpdate(BaseModel):
-    nombre: Optional[str] = None
-    descripcion: Optional[str] = None
-    precio: Optional[float] = None
-    categoria: Optional[ProductCategory] = None
-    codigo_lote: Optional[str] = None
-    fecha_vencimiento: Optional[date] = None
-    fecha_produccion: Optional[date] = None
-    stock_minimo: Optional[float] = None
-    stock_maximo: Optional[float] = None
-    unidad_venta: Optional[str] = None
-    es_perecedero: Optional[bool] = None
-    tiempo_vida_util: Optional[int] = None
-    requiere_refrigeracion: Optional[bool] = None
-    ingredientes: Optional[List[str]] = None
-    alergenos: Optional[List[str]] = None
-    calorias_por_porcion: Optional[float] = None
-    peso_porcion: Optional[float] = None
-    unidad_peso: Optional[str] = None
-
-class ProductoPanaderiaResponse(ProductoPanaderiaBase):
-    id: UUID
-    negocio_id: UUID
-    propietario_id: UUID
-    tipo_producto: ProductType
-    stock_terminado: Optional[float] = None
-    rating_promedio: float
-    reviews_count: int
-    fecha_creacion: datetime
-    fecha_actualizacion: datetime
-    
-    model_config = ConfigDict(from_attributes=True)
 
 # NUEVOS SCHEMAS PARA SISTEMA DE VENTAS
 class DetalleVentaBase(BaseModel):

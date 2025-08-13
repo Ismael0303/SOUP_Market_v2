@@ -14,13 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../components/ui/textarea';
 import { PlusCircle, MinusCircle, Calculator, DollarSign, TrendingUp } from 'lucide-react'; // Iconos para añadir/eliminar insumos y cálculos
 import Breadcrumbs from '../components/Breadcrumbs';
-import { useNotification } from '../context/NotificationContext';
+
 
 const EditProductScreen = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { productId } = useParams(); // Obtener el ID del producto de la URL
-  const { showNotification } = useNotification();
+  
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -37,8 +37,7 @@ const EditProductScreen = () => {
   const [availableInsumos, setAvailableInsumos] = useState([]); // Lista de todos los insumos del usuario
   const [selectedInsumos, setSelectedInsumos] = useState([]); // Insumos seleccionados para este producto
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingProduct, setIsLoadingProduct] = useState(true); // Para la carga inicial del producto
-  const [isLoadingData, setIsLoadingData] = useState(true); // Para la carga inicial de negocios/insumos
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
@@ -50,54 +49,34 @@ const EditProductScreen = () => {
   });
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
       return;
     }
 
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       if (isAuthenticated) {
         try {
-          setIsLoadingData(true);
-          // Obtener negocios del usuario
-          const businessData = await businessApi.getAllMyBusinesses();
-          setBusinesses(businessData);
+          const [businessData, insumosData, productData] = await Promise.all([
+            businessApi.getAllMyBusinesses(),
+            insumoApi.getAllMyInsumos(),
+            productApi.getProductById(productId)
+          ]);
 
-          // Obtener insumos del usuario
-          const insumosData = await insumoApi.getAllMyInsumos();
+          setBusinesses(businessData);
           setAvailableInsumos(insumosData);
 
-        } catch (err) {
-          console.error('Error al cargar datos iniciales (negocios/insumos):', err);
-          setError('No se pudieron cargar los datos iniciales (negocios/insumos).');
-        } finally {
-          setIsLoadingData(false);
-        }
-      }
-    };
-
-    fetchData();
-  }, [isAuthenticated, loading, navigate]);
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (isAuthenticated && productId && !isLoadingData) { // Esperar a que los datos iniciales carguen
-        try {
-          setIsLoadingProduct(true);
-          const productData = await productApi.getProductById(productId);
-          
           setFormData({
             nombre: productData.nombre || '',
             descripcion: productData.descripcion || '',
             precio: productData.precio || '',
             tipo_producto: productData.tipo_producto || '',
             negocio_id: productData.negocio_id || '',
-            precio_venta: productData.precio_venta || '', // Precargar
-            margen_ganancia_sugerido: productData.margen_ganancia_sugerido || '', // Precargar
-            insumos: [], // Se llenará con selectedInsumos
+            precio_venta: productData.precio_venta || '',
+            margen_ganancia_sugerido: productData.margen_ganancia_sugerido || '',
+            insumos: [],
           });
 
-          // Precargar insumos asociados
           if (productData.insumos_asociados && productData.insumos_asociados.length > 0) {
             setSelectedInsumos(
               productData.insumos_asociados.map(item => ({
@@ -106,10 +85,9 @@ const EditProductScreen = () => {
               }))
             );
           } else {
-            setSelectedInsumos([]); // Asegurarse de que esté vacío si no hay insumos
+            setSelectedInsumos([]);
           }
 
-          // Precargar información calculada del backend
           setCalculatedInfo({
             cogs: productData.cogs,
             precio_sugerido: productData.precio_sugerido,
@@ -117,19 +95,16 @@ const EditProductScreen = () => {
           });
 
         } catch (err) {
-          console.error(`Error al cargar el producto ${productId}:`, err);
-          setError('No se pudo cargar el producto para editar. Por favor, inténtalo de nuevo.');
+          console.error('Error al cargar datos iniciales:', err);
+          setError('No se pudieron cargar los datos iniciales.');
         } finally {
-          setIsLoadingProduct(false);
+          setIsLoading(false);
         }
       }
     };
 
-    // Solo intentar cargar el producto si no estamos cargando los datos iniciales
-    if (!isLoadingData) {
-      fetchProduct();
-    }
-  }, [isAuthenticated, productId, isLoadingData]); // Dependencia de isLoadingData para asegurar que se ejecuta después
+    fetchInitialData();
+  }, [isAuthenticated, authLoading, navigate, productId]);
 
   // Recalcular información en tiempo real si los insumos seleccionados o los campos de precio/margen cambian
   useEffect(() => {
@@ -241,7 +216,7 @@ const EditProductScreen = () => {
     }
   };
 
-  if (loading || !isAuthenticated || isLoadingData || isLoadingProduct) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
         <p className="text-gray-800 dark:text-gray-200">Cargando...</p>

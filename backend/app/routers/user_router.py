@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
 import uuid
@@ -21,6 +22,13 @@ def get_current_user_profile(current_user: Usuario = Depends(get_current_user)):
     Returns:
         The current user's data as a UsuarioResponse.
     """
+    print(f"DEBUG: User ID: {current_user.id}, Email: {current_user.email}")
+    print(f"DEBUG: User negocios: {current_user.negocios}")
+    if current_user.negocios:
+        print(f"DEBUG: First business ID: {current_user.negocios[0].id}")
+    else:
+        print("DEBUG: User has no associated businesses.")
+    print(f"DEBUG: negocio_principal_id property: {current_user.negocio_principal_id}")
     return current_user
 
 @router.put("/me", response_model=UsuarioResponse)
@@ -82,4 +90,36 @@ def update_current_user_cv(
             detail="User not found"
         )
     return updated_user
+
+class PluginUpdate(BaseModel):
+    plugin_name: str
+    action: str # "activate" or "deactivate"
+
+@router.put("/me/plugins", response_model=UsuarioResponse)
+def update_user_plugins(
+    plugin_update: PluginUpdate,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Activates or deactivates a plugin for the current user.
+    """
+    if plugin_update.action == "activate":
+        updated_user = crud_user.activate_plugin(db, current_user.id, plugin_update.plugin_name)
+    elif plugin_update.action == "deactivate":
+        updated_user = crud_user.deactivate_plugin(db, current_user.id, plugin_update.plugin_name)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid action. Use 'activate' or 'deactivate'."
+        )
+
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return updated_user
+
 

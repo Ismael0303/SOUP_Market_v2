@@ -1,12 +1,27 @@
 // frontend/src/components/Layout.js
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import userApi from '../api/userApi';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { logout } = useAuth();
-  const location = useLocation();
+  const { logout, user } = useAuth();
+  const [activePlugins, setActivePlugins] = useState([]);
+
+  useEffect(() => {
+    const fetchUserPlugins = async () => {
+      if (user) {
+        try {
+          const profile = await userApi.getProfile();
+          setActivePlugins(profile.plugins_activos || []);
+        } catch (error) {
+          console.error("Error fetching user plugins:", error);
+        }
+      }
+    };
+    fetchUserPlugins();
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -65,6 +80,28 @@ const Layout = ({ children }) => {
               <Link to="/dashboard/sales" className="flex items-center text-gray-700 hover:text-blue-600 p-2 rounded-lg">
                 <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 Ventas
+              </Link>
+            </li>
+            {activePlugins.includes('bakery') && (
+              <>
+                <li className="mb-4">
+                  <Link to="/dashboard/recetas" className="flex items-center text-gray-700 hover:text-blue-600 p-2 rounded-lg">
+                    {/* ... svg icon ... */}
+                    Recetas
+                  </Link>
+                </li>
+                <li className="mb-4">
+                  <Link to="/dashboard/produccion" className="flex items-center text-gray-700 hover:text-blue-600 p-2 rounded-lg">
+                    {/* ... svg icon ... */}
+                    Producción
+                  </Link>
+                </li>
+              </>
+            )}
+            <li className="mb-4">
+              <Link to="/dashboard/plugins" className="flex items-center text-gray-700 hover:text-blue-600 p-2 rounded-lg">
+                                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2v2m0-2h2m-2 0H8m4 10v2m0-2v-2m0 2h2m-2 0h-2m-6-4h2m-2 0v2m2-2V8m0 4h2m-2 0v2m2-2V8m0 4h2m-2 0v2m2-2V8m-2 8h2m-2 0v2m2-2v-2m-4 4h2m-2 0v2m2-2v-2m-4 4h2m-2 0v2m2-2v-2"></path></svg>
+                Plugins
               </Link>
             </li>
             <li className="mb-4">
